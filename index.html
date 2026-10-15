@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StudyMate — AI-Based Unit-Wise Study Planner</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%3E<text y=%2226%22 font-size=%2224%22>🎓</text></svg>" />
+</head>
+<body>
+
+  <!-- Top Application Header -->
+  <header class="app-header">
+    <div class="logo-container">
+      <div class="logo-icon">🎓</div>
+      <div class="logo-text">
+        <h1>StudyMate</h1>
+        <span>AI Unit-Wise Study Planner</span>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <!-- AI Service Status Pill -->
+      <div id="ai-status-badge" class="ai-badge demo" title="Checking AI service status...">
+        <span class="status-dot"></span>
+        <span id="ai-status-text">AI Demo Mode Active</span>
+      </div>
+
+      <button id="load-sample-btn" class="btn btn-secondary btn-sm" title="Populate college syllabus with demo subjects">
+        <span>⚡ Demo Data</span>
+      </button>
+
+      <button id="export-data-btn" class="btn btn-secondary btn-sm" title="Backup your planner data as JSON">
+        <span>💾 Backup</span>
+      </button>
+
+      <label class="btn btn-secondary btn-sm" style="margin-bottom: 0; cursor: pointer;" title="Import backup JSON file">
+        <span>📥 Import</span>
+        <input type="file" id="import-file-input" accept=".json" style="display: none;" />
+      </label>
+
+      <button id="reset-data-btn" class="btn btn-danger-outline btn-sm" title="Reset all subjects and schedule">
+        <span>🔄 Reset</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Navigation Tabs -->
+  <nav class="nav-tabs" aria-label="Planner Views">
+    <button class="tab-btn active" data-tab="dashboard">
+      <span>📊</span> Dashboard
+    </button>
+    <button class="tab-btn" data-tab="syllabus">
+      <span>📚</span> Syllabus & Units
+    </button>
+    <button class="tab-btn" data-tab="timetable">
+      <span>📅</span> Generated Timetable
+    </button>
+    <button class="tab-btn" data-tab="chat">
+      <span>🤖</span> AI Study Advisor
+    </button>
+  </nav>
+
+  <!-- Main Container -->
+  <main class="main-content">
+
+    <!-- TAB 1: Dashboard View -->
+    <section id="tab-dashboard" class="tab-pane active">
+      <!-- High Level Metrics Grid -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon indigo">📚</div>
+          <div class="stat-info">
+            <h4>Total Subjects</h4>
+            <div id="stat-total-subjects" class="stat-value">0</div>
+            <div class="stat-subtitle">Active Courses</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon amber">⏳</div>
+          <div class="stat-info">
+            <h4>Next Exam In</h4>
+            <div id="stat-exam-countdown" class="stat-value">—</div>
+            <div class="stat-subtitle">Earliest Deadline</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon emerald">✅</div>
+          <div class="stat-info">
+            <h4>Units Completed</h4>
+            <div id="stat-units-progress" class="stat-value">0 / 0</div>
+            <div class="stat-subtitle">Mastered Units</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon rose">🎯</div>
+          <div class="stat-info">
+            <h4>Hard Topics</h4>
+            <div id="stat-hard-topics" class="stat-value">0 Pending</div>
+            <div class="stat-subtitle">High-Yield Priority</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Syllabus Completion Overview Card -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">📈 Overall Syllabus Completion</h2>
+          <span id="stat-completion-pct" style="font-size: 1.25rem; font-weight: 800; color: var(--primary);">0%</span>
+        </div>
+        <div class="progress-bar-bg">
+          <div id="dashboard-progress-fill" class="progress-bar-fill" style="width: 0%;"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem;">
+          <span>Progress auto-updates as you check off topics in the schedule.</span>
+          <span>Spaced Repetition & Revision Active</span>
+        </div>
+      </div>
+
+      <!-- Two-Column Grid: Course Summaries & Action Callout -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem;">
+        <div class="card" style="margin-bottom: 0;">
+          <div class="card-header">
+            <h3 class="card-title">📑 Course Progress Breakdown</h3>
+            <button class="btn btn-outline btn-sm" onclick="App.switchTab('syllabus')">Manage Syllabus →</button>
+          </div>
+          <div id="dashboard-subjects-overview">
+            <!-- Dynamic course progress items rendered via app.js -->
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom: 0; background: linear-gradient(135deg, #f8fafc, #eff6ff); border-color: #bfdbfe;">
+          <div class="card-header">
+            <h3 class="card-title" style="color: #1e40af;">⚡ Quick Study Routine</h3>
+          </div>
+          <p style="font-size: 0.88rem; color: #334155; line-height: 1.6; margin-bottom: 1.25rem;">
+            Ready to study today? Configure your daily available hours and let the algorithm schedule deep work, spaced revisions, and mock practice blocks.
+          </p>
+          <div style="display: flex; flex-direction: column; gap: 0.65rem;">
+            <button class="btn btn-primary" onclick="App.switchTab('timetable')">
+              📅 Open Timetable Planner
+            </button>
+            <button class="btn btn-secondary" onclick="App.switchTab('chat')">
+              🤖 Consult AI Study Advisor
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: Syllabus & Units Manager -->
+    <section id="tab-syllabus" class="tab-pane">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">📚 Course Syllabus & Units Manager</h2>
+            <p style="font-size: 0.84rem; color: var(--text-muted); margin-top: 0.25rem;">
+              Register subjects, units, exam dates, and individual topics with difficulty ratings (Easy, Medium, Hard).
+            </p>
+          </div>
+          <button id="open-add-subject-modal-btn" class="btn btn-primary">
+            + Add New Subject
+          </button>
+        </div>
+
+        <!-- Cards container for subjects -->
+        <div id="syllabus-cards-container" class="subjects-grid">
+          <!-- Rendered via App.renderSyllabusList() -->
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: Timetable Generator & Viewer -->
+    <section id="tab-timetable" class="tab-pane">
+      <!-- Planner Parameters Card -->
+      <div class="planner-params-card">
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 1.25rem;">
+          <div>
+            <label class="form-label" for="daily-hours-input">Daily Available Hours</label>
+            <input 
+              type="number" 
+              id="daily-hours-input" 
+              class="form-control" 
+              value="3.5" 
+              min="0.5" 
+              max="18" 
+              step="0.5" 
+              style="width: 140px;" 
+            />
+          </div>
+
+          <div>
+            <label class="form-label" for="start-date-input">Schedule Start Date</label>
+            <input 
+              type="date" 
+              id="start-date-input" 
+              class="form-control" 
+              style="width: 170px;" 
+            />
+          </div>
+        </div>
+
+        <button id="generate-schedule-btn" class="btn btn-primary btn-lg">
+          ⚡ Generate Timetable
+        </button>
+      </div>
+
+      <!-- Filter Controls Bar -->
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem;">
+        <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+          <button class="btn btn-secondary btn-sm tt-filter-btn active" data-filter="all">All Slots</button>
+          <button class="btn btn-secondary btn-sm tt-filter-btn" data-filter="study">📖 Core Study</button>
+          <button class="btn btn-secondary btn-sm tt-filter-btn" data-filter="revision">🔁 Spaced Revision</button>
+          <button class="btn btn-secondary btn-sm tt-filter-btn" data-filter="practice">📝 Mock Practice</button>
+        </div>
+        <div style="font-size: 0.8rem; color: var(--text-muted);">
+          Tip: Check off slots as you study to update your syllabus completion!
+        </div>
+      </div>
+
+      <!-- Schedule Timeline Container -->
+      <div id="timetable-results-container">
+        <!-- Rendered via TimetableManager.renderTimetable() -->
+      </div>
+    </section>
+
+    <!-- TAB 4: AI Study Advisor Chat -->
+    <section id="tab-chat" class="tab-pane">
+      <div class="chat-container">
+        <!-- Chat Header -->
+        <div class="chat-header">
+          <div style="display: flex; align-items: center; gap: 0.6rem;">
+            <div style="width: 34px; height: 34px; border-radius: 50%; background: #e0e7ff; color: #4338ca; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+              🤖
+            </div>
+            <div>
+              <strong style="font-size: 0.95rem; color: #0f172a;">StudyMate AI Assistant</strong>
+              <div style="font-size: 0.72rem; color: var(--text-muted);">Academic Advice • Exam Strategy • Spaced Repetition</div>
+            </div>
+          </div>
+          <button id="chat-clear-btn" class="btn btn-secondary btn-sm" title="Clear chat history">
+            Clear Chat
+          </button>
+        </div>
+
+        <!-- Prominent AI Connectivity / Mode Banner -->
+        <div id="chat-mode-notice-banner" class="ai-mode-notice demo" style="margin: 0.75rem 1.25rem 0 1.25rem;">
+          <span id="chat-mode-notice-icon">ℹ️</span>
+          <span id="chat-mode-notice-text">AI Demo Mode Active: IBM watsonx.ai credentials are not configured in .env. Running on built-in Heuristic Advisor.</span>
+        </div>
+
+        <!-- Chat Messages Scroll Area -->
+        <div id="chat-messages-container" class="chat-messages">
+          <!-- Populated dynamically via ChatManager -->
+        </div>
+
+        <!-- Quick Prompt Chips -->
+        <div class="prompt-chips">
+          <button class="chip-btn" data-prompt="Explain AVL tree rotations (LL, RR, LR, RL) with examples">🌲 AVL Rotations</button>
+          <button class="chip-btn" data-prompt="Explain Dijkstra's shortest path algorithm step-by-step">🗺️ Dijkstra Algorithm</button>
+          <button class="chip-btn" data-prompt="What is the difference between BFS and DFS and when should I use each?">🌐 BFS vs DFS</button>
+          <button class="chip-btn" data-prompt="Compare QuickSort vs MergeSort: time complexity, space, and stability">⚡ QuickSort vs MergeSort</button>
+          <button class="chip-btn" data-prompt="What are my registered courses and units?">📋 My Syllabus</button>
+          <button class="chip-btn" data-prompt="How should I approach my Hard units?">🎯 Tackle Hard Units</button>
+          <button class="chip-btn" data-prompt="What is the best way to revise before exams?">🔁 Spaced Revision</button>
+          <button class="chip-btn" data-prompt="I missed study time yesterday, how can I catch up?">⚡ Catch Up Protocol</button>
+        </div>
+
+        <!-- Chat Input Bar -->
+        <div class="chat-input-bar">
+          <input 
+            type="text" 
+            id="chat-input-field" 
+            placeholder="Ask StudyMate anything (e.g. 'How do I balance DSA and DBMS?')..." 
+            autocomplete="off" 
+          />
+          <button id="chat-send-btn" class="btn btn-primary">
+            Send
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Modal: Add / Edit Subject -->
+  <div id="subject-modal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="subject-modal-title" class="modal-title">Add New Subject</h3>
+        <button type="button" class="modal-close-btn modal-close-trigger">&times;</button>
+      </div>
+
+      <form id="subject-form">
+        <div class="form-row">
+          <div class="form-group" style="flex: 2;">
+            <label class="form-label" for="subject-name">Subject Title *</label>
+            <input 
+              type="text" 
+              id="subject-name" 
+              class="form-control" 
+              placeholder="e.g. Operating Systems" 
+              required 
+            />
+          </div>
+
+          <div class="form-group" style="flex: 1;">
+            <label class="form-label" for="subject-code">Course Code</label>
+            <input 
+              type="text" 
+              id="subject-code" 
+              class="form-control" 
+              placeholder="e.g. CS302" 
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="subject-exam-date">Target Exam Date *</label>
+          <input 
+            type="date" 
+            id="subject-exam-date" 
+            class="form-control" 
+            required 
+          />
+        </div>
+
+        <!-- Units & Topics Section -->
+        <div style="margin-top: 1.25rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+            <label class="form-label" style="margin-bottom: 0;">Syllabus Units & Topics *</label>
+            <button type="button" id="modal-add-unit-row-btn" class="btn btn-outline btn-sm">
+              + Add Another Unit
+            </button>
+          </div>
+          <p style="font-size: 0.76rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+            Specify each unit title, difficulty level, and comma-separated topics.
+          </p>
+
+          <div id="modal-units-list">
+            <!-- Dynamic unit rows added via App.addUnitRowToModal() -->
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary modal-close-trigger">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Subject</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notifications Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Client-side Scripts -->
+  <script src="js/storage.js"></script>
+  <script src="js/timetable.js"></script>
+  <script src="js/chat.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

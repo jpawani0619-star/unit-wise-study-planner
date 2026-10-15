@@ -1,0 +1,27 @@
+{
+  "name": "unit-wise-study-planner",
+  "version": "1.0.0",
+  "description": "AI-Based Unit-Wise Study Planner Chatbot for College Students",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node tests/testScheduleAndChat.js && node tests/testApiEndpoints.js && node tests/testEndToEndFeatures.js",
+    "test:watsonx": "node scripts/testWatsonxConnection.js"
+  },
+  "keywords": [
+    "study-planner",
+    "timetable",
+    "ai",
+    "watsonx",
+    "college",
+    "education"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2"
+  }
+}
